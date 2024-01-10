@@ -1,8 +1,7 @@
 #include <Arduino.h>
 #include <BLEDevice.h>
 #include <FastLED.h>
-
-
+#include <M5Unified.h>
 /*
 how to use.
 
@@ -18,39 +17,28 @@ how to use.
 7.set your power zone at setRGB method.
 
 tested device
-- M5stack gray
-  M5stack official ver.1.0.6
-- WS2811 LED tape
-- 12V 3A ac adapter
-- wahoo kickr core
+- WS2812B LED tape
+- 5V 4A ac adapter
+- wahoo kickr v6
 
 */
 
 //LED
 #define LED_PIN     5
-#define NUM_LEDS    15
-#define BRIGHTNESS  50
+#define NUM_LEDS    130
+#define BRIGHTNESS  100
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
 
 //inner LED
+  /*
 #define INNER_LED_PIN 2
 #define INNER_LED_COUNT 1
 CRGB inner_leds[INNER_LED_COUNT];
+  */
 
 //power zone
-  /*
-    FTP 285 
-    Zone 1 gray …-59%
-    Zone 2 blue60-75%  170
-    Zone 3 green 76-89% 215
-    Zone 4 yellow 90-104% 255
-    Zone 5 orange 105-118% 300
-    Zone 6 red 119%-340
-    
-    // its my power. change it.
-  */
 #define FTP 260
 #define ZONE_6 FTP*1.19
 #define ZONE_5 FTP*1.05
@@ -58,9 +46,8 @@ CRGB inner_leds[INNER_LED_COUNT];
 #define ZONE_3 FTP*0.76
 #define ZONE_2 FTP*0.6
 
-//Adafruit_NeoPixel inner_pixels(INNER_LED_COUNT, INNER_LED_PIN, NEO_GRB + NEO_KHZ800);
 
-#define DEF_BLE_ADDR "f2:04:ad:eb:1e:88" // my kickr core f2:04:ad:eb:1e:88
+#define DEF_BLE_ADDR "f2:04:ad:eb:1e:88" // my kickr 
 #define TARGET_CHARA "00002a63-0000-1000-8000-00805f9b34fb" // its my kickr's id, find your charas
 
 static BLEUUID serviceUUID("00001818-0000-1000-8000-00805f9b34fb");// its my kickr, find yours
@@ -86,6 +73,8 @@ int powerA1 = 0;
 int powerA2 = 0;
 int power3sec = 0;
 
+int lastStatus = -1;
+
 
 void ledOn() {
   Serial.print("clear");
@@ -98,7 +87,9 @@ void ledOn() {
   Serial.println();
     FastLED.show();
 }
-void statusLedOn() {
+void statusScreenOn() {
+  /*
+  for m5stamp, show status to other LED
   if (doConnect == false) {
     // startConnection
     inner_leds[0] = CRGB::Blue;
@@ -117,6 +108,47 @@ void statusLedOn() {
   Serial.print("show status");
   Serial.println();
   FastLED.show();
+  */
+ int textSize = 4;
+ int color = BLACK;
+ int status = 0;
+ String textMessage = "";
+  if (doConnect == false) {
+    // startConnection
+    status=0;
+    color = BLUE;
+    textMessage = "startConnection";
+  }else if (deviceConnected == true) {
+    if (isRegistered) {
+    // Registered
+    status=1;
+    color = GREEN;
+    textMessage = "Registered";
+    }else{
+    // not Registered
+    status=2;
+    color = ORANGE;
+    textMessage = "not Registered";
+    }
+  }else{
+    // disconnect
+    status=3;
+    color = RED;
+    textMessage = "disconnect";
+  }
+  if(status != lastStatus){
+    Serial.print("status change");
+    M5.Lcd.clear();
+    M5.Lcd.fillScreen(color);
+    M5.Lcd.setCursor(0,80);
+    M5.Lcd.setTextSize(textSize);
+    M5.Lcd.println(textMessage);
+    M5.update();
+  }else{
+  Serial.print("status keep");
+  }
+  lastStatus=status;
+  Serial.println();
 }
 
 void setRGB() {
@@ -299,6 +331,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
 void setup() {
   setCpuFrequencyMhz(160);
+  M5.begin();
   //LED
   delay( 3000 ); // power-up safety delay
   // FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
@@ -322,6 +355,7 @@ void setup() {
 }
 void loop() {
   //Serial.println("loop");
+  statusScreenOn();    
   if (doConnect == false) {
   }else if (deviceConnected == true) {
     if (isRegistered) {
@@ -336,6 +370,5 @@ void loop() {
   //LED
   setRGB();   
   ledOn();   
-  // statusLedOn();    
   delay(1000);
 }
