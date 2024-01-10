@@ -31,12 +31,6 @@ tested device
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
 
-//inner LED
-  /*
-#define INNER_LED_PIN 2
-#define INNER_LED_COUNT 1
-CRGB inner_leds[INNER_LED_COUNT];
-  */
 
 //power zone
 #define FTP 260
