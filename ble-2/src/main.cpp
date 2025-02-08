@@ -5,7 +5,7 @@
 /*
 how to use.
 
-1.set serviceUUID empty, like a bellow
+1.set serviceUUID empty, like a bellowa
   static BLEUUID serviceUUID("");
 2.build and run to find your service UUID
 3.you will find all BLE device list, check your power source's UUID
@@ -33,12 +33,14 @@ CRGB leds[NUM_LEDS];
 
 
 //power zone
-#define FTP 260
+// #define FTP 260
+int FTP = 260;
 #define ZONE_6 FTP*1.19
 #define ZONE_5 FTP*1.05
 #define ZONE_4 FTP*0.9
 #define ZONE_3 FTP*0.76
 #define ZONE_2 FTP*0.6
+
 
 
 #define DEF_BLE_ADDR "f2:04:ad:eb:1e:88" // my kickr 
@@ -68,6 +70,7 @@ int powerA2 = 0;
 int power3sec = 0;
 
 int lastStatus = -1;
+int lastFTP = FTP;
 
 
 void ledOn() {
@@ -105,38 +108,48 @@ void statusScreenOn() {
   */
  int textSize = 4;
  int color = BLACK;
+ int txtcolor = WHITE;
  int status = 0;
  String textMessage = "";
   if (doConnect == false) {
     // startConnection
     status=0;
     color = BLUE;
+    txtcolor = WHITE;
     textMessage = "startConnection";
   }else if (deviceConnected == true) {
     if (isRegistered) {
     // Registered
     status=1;
-    color = GREEN;
+    color = BLACK;
+    txtcolor = DARKGREY;
     textMessage = "Registered";
     }else{
     // not Registered
     status=2;
     color = ORANGE;
+    txtcolor = WHITE;
     textMessage = "not Registered";
     }
   }else{
     // disconnect
     status=3;
     color = RED;
+    txtcolor = WHITE;
     textMessage = "disconnect";
   }
-  if(status != lastStatus){
+  if(status != lastStatus || lastFTP != FTP){
     Serial.print("status change");
     M5.Lcd.clear();
     M5.Lcd.fillScreen(color);
     M5.Lcd.setCursor(0,80);
     M5.Lcd.setTextSize(textSize);
+    M5.Lcd.setTextColor(txtcolor);
     M5.Lcd.println(textMessage);
+    M5.Lcd.println("");
+    M5.Lcd.print("FTP : ");
+    M5.Lcd.println(FTP); 
+    
     M5.update();
   }else{
   Serial.print("status keep");
@@ -334,6 +347,10 @@ void setup() {
   
   FastLED.setBrightness(BRIGHTNESS);
 
+  if(FTP < 200){
+    FTP = 260;
+  }
+
   //FastLED.addLeds<NEOPIXEL, INNER_LED_PIN>(inner_leds, INNER_LED_COUNT);
   FastLED.clear();
   
@@ -348,6 +365,26 @@ void setup() {
   pBLEScan->start(10);
 }
 void loop() {
+
+  M5.update();
+
+  if (M5.BtnA.wasPressed()) {
+      FTP--;
+      Serial.println("Counter: " + String(FTP));  // シリアルモニタに出力
+  }
+
+  // BtnBを押すとカウンターをリセット
+  if (M5.BtnB.wasPressed()) {
+    FTP = 260;
+      Serial.println("Counter: " + String(FTP));
+  }
+
+  // BtnCを押すとカウンターを減少
+  if (M5.BtnC.wasPressed()) {
+    FTP++;
+      Serial.println("Counter: " + String(FTP));
+  }
+
   //Serial.println("loop");
   statusScreenOn();    
   if (doConnect == false) {
