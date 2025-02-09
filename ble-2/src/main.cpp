@@ -155,6 +155,7 @@ void statusScreenOn() {
   Serial.print("status keep");
   }
   lastStatus=status;
+  lastFTP=FTP;
   Serial.println();
 }
 
